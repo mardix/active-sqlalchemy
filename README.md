@@ -1,5 +1,5 @@
 
-#Active-Alchemy
+# Active-Alchemy
 
 **Version 1.0.***
 
@@ -30,11 +30,11 @@ exists in the database. This feature allows you to un-delete an entry
 
 ---
 
-##Quick Overview:
+## Quick Overview:
 
-####Create the model
-
-    from active_alchemy import ActiveAlchemy
+#### Create the model
+```py
+    from active_alchemy import ActiveAlchemy
 
     db = ActiveAlchemy('sqlite://')
 
@@ -42,82 +42,82 @@ exists in the database. This feature allows you to un-delete an entry
 		name = db.Column(db.String(25))
 		location = db.Column(db.String(50), default="USA")
 		last_access = db.Column(db.Datetime)
-
+```
 	
-####Retrieve all records
-
+#### Retrieve all records
+```py
     for user in User.query():
         print(user.name)
+``` 
     
-    
-####Create new record
-
+#### Create new record
+```py
 	user = User.create(name="Mardix", location="Moon")
 	
-	# or
+	# - or -
 	
 	user = User(name="Mardix", location="Moon").save()
-
+```
     
-####Get a record by primary key (id)
-
+#### Get a record by primary key (id)
+```py
     user = User.get(1234)
+```
 
-
-####Update record from primary key
-
+#### Update record from primary key
+```py
 	user = User.get(1234)
 	if user:
 		user.update(location="Neptune") 
-
-####Update record from query iteration
-
+```
+#### Update record from query iteration
+```py
 	for user in User.query():
 		user.update(last_access=db.utcnow());
-		
+```		
 
-####Soft Delete a record
-
+#### Soft Delete a record
+```py
 	user = User.get(1234)
 	if user:
 		user.delete() 
-		
-####Query Records
-
+```		
+#### Query Records
+```py
     users = User.query(User.location.distinct())
 
     for user in users:
         ...
+```
 
-
-####Query with filter
-
+#### Query with filter
+```py
 
     all = User.query().filter(User.location == "USA")
 
     for user in users:
         ...
+```
 
-
-##How to use
+## How to use
 
 
 ### Install
 
-
+```shell
     pip install active_alchemy
-
+```
 
 ### Create a connection 
 
 The `ActiveAlchemy` class is used to instantiate a SQLAlchemy connection to
 a database.
 
-
+```py
     from active_alchemy import ActiveAlchemy
 
     db = ActiveAlchemy(dialect+driver://username:password@host:port/database)
-
+```
 #### Databases Drivers & DB Connection examples
 
 Active-Alchemy comes with a `PyMySQL` and `PG8000` as drivers for MySQL 
@@ -126,27 +126,27 @@ other drivers for better performance. `SQLite` is already built in Python.
   
 
 **SQLite:**
-
+```py
     from active_alchemy import ActiveAlchemy
 
     db = ActiveAlchemy("sqlite://") # in memory
     
-    # or 
+    # - or -
     
     db = ActiveAlchemy("sqlite:///foo.db") # DB file
-    
+```
 **PostgreSql:**
-
+```py
     from active_alchemy import ActiveAlchemy
 
     db = ActiveAlchemy("postgresql+pg8000://user:password@host:port/dbname")
-
+```
 **PyMySQL:**
-
+```py
     from active_alchemy import ActiveAlchemy
 
     db = ActiveAlchemy("mysql+pymysql://user:password@host:port/dbname")
-
+```
 ---
 
 
@@ -158,7 +158,7 @@ So you can declare models like the following examples:
 ### Create a Model
 
 To start, create a model class and extends it with db.Model
-
+```py
 	# mymodel.py
 	
     from active_alchemy import ActiveAlchemy
@@ -171,7 +171,7 @@ To start, create a model class and extends it with db.Model
     	
     # Put at the end of the model module to auto create all models
     db.create_all()
-
+```
 
 - Upon creation of the table, db.Model will add the following columns: ``id``, ``created_at``, ``upated_at``, ``is_deleted``, ``deleted_at``
 
@@ -235,122 +235,121 @@ By default ``db.Model`` adds several preset columns on the table, if you don't w
 #### query(\*args, \*\*kwargs)
 
 To start querying the DB and returns a ``db.session.query`` object to filter or apply more conditions.
-
+```py
 	for user in User.query():
 		print(user.login)
-
+```
 By default `query()` will show only all non-soft-delete records. To display both deleted and non deleted items, add the arg: ``include_deleted=True``
-
+```py
 	for user in User.query(include_deleted=True):
 		print(user.login)
-		
+```		
 To select columns...
-
+```py
 	for user in User.query(User.name.distinct(), User.location):
 		print(user.login)
-	
+```	
 To use with filter...
-
+```py
 	all = User
 	        .query(User.name.distinct, User.location)
 	        .order_by(User.updated_at.desc())
 	        .filter(User.location == "Charlotte")
-		
+```		
 #### get(id)
 
 Get one record by id. By default it will query only a record that is not soft-deleted
-
+```py
 	id = 1234
 	user = User.get(id)
 	print(user.id)
 	print(user.login)
-
+```
 To query a record that has been soft deleted, just set the argument ``include_deleted=True``
-
+```py
 	id = 234
 	user = User.get(id, include_deleted=True)
-		
+```		
 		
 #### create(\*\*kwargs)
 
 To create/insert new record. Same as __init__, but just a shortcut to it.
-
+```py
 	record = User.create(login='abc', passw_hash='hash', profile_id=123)
 	print (record.login) # -> abc
-
+```
 or you can use the __init__ with save()
-
+```py
 	record = User(login='abc', passw_hash='hash', profile_id=123).save()
 	print (record.login) # -> abc
 	
-or 
+        # - or - 
 
 	record = User(login='abc', passw_hash='hash', profile_id=123)
 	record.save()
 	print (record.login) # -> abc
-	
+```	
 	
 #### update(\*\*kwargs)
 
 Update an existing record 
-
+```py
 	record = User.get(124)
 	record.update(login='new_login')
 	print (record.login) # -> new_login
-
+```
 #### delete()
 
 To soft delete a record. ``is_deleted`` will be set to True and ``deleted_at`` datetime will be set
-
+```py
 	record = User.get(124)
 	record.delete()
 	print (record.is_deleted) # -> True
-	
+```	
 To soft **UNdelete** a record. ``is_deleted`` will be set to False and ``deleted_at`` datetime will be None
-
-
+```py
 	record = User.get(124)
 	record.delete(delete=False)
 	print (record.is_deleted) # -> False
-	
+```	
 To HARD delete a record. The record will be deleted completely
-
+```py
 	record = User.get(124)
 	record.delete(hard_delete=True)
-
+```
 
 #### save()
 
 A shortcut to ``session.add`` + ``session.commit()``
-
+```py
 	record = User.get(124)
 	record.login = "Another one"
 	record.save()
-
+```
 ---
 
 #### Method Chaining 
 
-For convenience, some method chaining are available
-
+For convenience, some method is available
+```py
 	user = User(name="Mardix", location="Charlotte").save()
 	
 	User.get(12345).update(location="Atlanta")
 	
 	User.get(345).delete().delete(False).update(location="St. Louis")
-
+```
 ---
 
 
 #### Aggegated selects
-
+```py
 	class Product(db.Model):
     	name = db.Column(db.String(250))
     	price = db.Column(db.Numeric)
     	
     price_label = db.func.sum(Product.price).label('price')
     results = Product.query(price_label)
-
+```
 ---
 
 ## With Web Application
@@ -359,50 +358,50 @@ In a web application you need to call ``db.session.remove()`` after each respons
 
 For example using Flask, you can do:
 
-
+```py
     app = Flask(__name__)
 
     db = ActiveAlchemy('sqlite://', app=app)
 
-or
+    # - or -
 
     db = ActiveAlchemy()
 
     app = Flask(__name__)
 
     db.init_app(app)
-
+```
 
 ### More examples
 
-####Many databases, one web app
+#### Many databases, one web app
 
-
+```py
     app = Flask(__name__)
     db1 = ActiveAlchemy(URI1, app)
     db2 = ActiveAlchemy(URI2, app)
+```
 
+#### Many web apps, one database
 
-####Many web apps, one database
-
-
+```py
     db = ActiveAlchemy(URI1)
 
     app1 = Flask(__name__)
     app2 = Flask(__name__)
     db.init_app(app1)
     db.init_app(app2)
-
+```
         
 ---
 
 ## Pagination
 
 All the results can be easily paginated
-
+```py
     users = User.paginate(page=2, per_page=20)
     print(list(users))  # [User(21), User(22), User(23), ... , User(40)]
-
+```
 
 The paginator object it's an iterable that returns only the results for that page, so you use it in your templates in the same way than the original result:
 
@@ -468,7 +467,7 @@ This is one way how you could render such a pagination in your templates:
 
 ______
 
-####Credits:
+#### Credits:
 
 [SQLAlchemy](http://www.sqlalchemy.org/)
 
