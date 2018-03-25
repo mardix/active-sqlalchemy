@@ -41,7 +41,7 @@ exists in the database. This feature allows you to un-delete an entry
 	class User(db.Model):
 		name = db.Column(db.String(25))
 		location = db.Column(db.String(50), default="USA")
-		last_access = db.Column(db.Datetime)
+		last_access = db.Column(db.DateTime)
 ```
 	
 #### Retrieve all records
