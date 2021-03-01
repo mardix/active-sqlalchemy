@@ -34,10 +34,12 @@ DEFAULT_PER_PAGE = 10
 
 utcnow = arrow.utcnow
 
+
 def _create_scoped_session(db, query_cls):
     session = sessionmaker(autoflush=True, autocommit=False,
                            bind=db.engine, query_cls=query_cls)
     return scoped_session(session)
+
 
 def _tablemaker(db):
     def make_sa_table(*args, **kwargs):
@@ -103,6 +105,7 @@ class ModelTableNameDescriptor(object):
     """
     Create the table name if it doesn't exist.
     """
+
     def __get__(self, obj, type):
         tablename = type.__dict__.get('__tablename__')
         if not tablename:
@@ -196,7 +199,6 @@ class BaseModel(object):
         self.save()
         return self
 
-
     @classmethod
     def query(cls, *args):
         """
@@ -234,6 +236,7 @@ class BaseModel(object):
             self.db.rollback()
             raise
 
+
 class Model(BaseModel):
     """
     Model create
@@ -270,9 +273,9 @@ class Model(BaseModel):
         :param id: The id of the entry
         :param include_deleted: It should not query deleted record. Set to True to get all
         """
-        return cls.query(include_deleted=include_deleted)\
-                  .filter(cls.id == id)\
-                  .first()
+        return cls.query(include_deleted=include_deleted) \
+            .filter(cls.id == id) \
+            .first()
 
     def delete(self, delete=True, hard_delete=False):
         """
@@ -341,7 +344,8 @@ class ActiveAlchemy(object):
                  pool_timeout=None,
                  pool_recycle=None,
                  convert_unicode=True,
-                 query_cls=BaseQuery):
+                 query_cls=BaseQuery,
+                 connect_args={}):
 
         self.uri = uri
         self.info = make_url(uri)
@@ -351,6 +355,7 @@ class ActiveAlchemy(object):
             pool_timeout=pool_timeout,
             pool_recycle=pool_recycle,
             convert_unicode=convert_unicode,
+            connect_args=connect_args
         )
 
         self.connector = None
