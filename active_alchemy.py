@@ -36,8 +36,9 @@ utcnow = arrow.utcnow
 
 
 def _create_scoped_session(db, query_cls):
-    session = sessionmaker(autoflush=True, autocommit=False,
-                           bind=db.engine, query_cls=query_cls)
+    session = sessionmaker(
+        autoflush=True, autocommit=False, bind=db.engine, query_cls=query_cls
+    )
     return scoped_session(session)
 
 
@@ -45,10 +46,10 @@ def _tablemaker(db):
     def make_sa_table(*args, **kwargs):
         if len(args) > 1 and isinstance(args[1], db.Column):
             args = (args[0], db.metadata) + args[1:]
-        kwargs.setdefault('bind_key', None)
-        info = kwargs.pop('info', None) or {}
-        info.setdefault('bind_key', None)
-        kwargs['info'] = info
+        kwargs.setdefault("bind_key", None)
+        info = kwargs.pop("info", None) or {}
+        info.setdefault("bind_key", None)
+        kwargs["info"] = info
         return sqlalchemy.Table(*args, **kwargs)
 
     return make_sa_table
@@ -107,10 +108,10 @@ class ModelTableNameDescriptor(object):
     """
 
     def __get__(self, obj, type):
-        tablename = type.__dict__.get('__tablename__')
+        tablename = type.__dict__.get("__tablename__")
         if not tablename:
             tablename = inflection.underscore(type.__name__)
-            setattr(type, '__tablename__', tablename)
+            setattr(type, "__tablename__", tablename)
         return tablename
 
 
@@ -127,7 +128,7 @@ class EngineConnector(object):
             uri = self._sa_obj.uri
             info = self._sa_obj.info
             options = self._sa_obj.options
-            echo = options.get('echo')
+            echo = options.get("echo")
             if (uri, echo) == self._connected_for:
                 return self._engine
             self._engine = engine = sqlalchemy.create_engine(info, **options)
@@ -148,11 +149,11 @@ class BaseModel(object):
         so we can do dict(sa_instance).
         """
         for k in self.__dict__.keys():
-            if not k.startswith('_'):
+            if not k.startswith("_"):
                 yield (k, getattr(self, k))
 
     def __repr__(self):
-        return '<%s>' % self.__class__.__name__
+        return "<%s>" % self.__class__.__name__
 
     def to_dict(self):
         """
@@ -241,6 +242,7 @@ class Model(BaseModel):
     """
     Model create
     """
+
     id = Column(Integer, primary_key=True)
     created_at = Column(sa_utils.ArrowType, default=utcnow)
     updated_at = Column(sa_utils.ArrowType, default=utcnow, onupdate=utcnow)
@@ -273,9 +275,7 @@ class Model(BaseModel):
         :param id: The id of the entry
         :param include_deleted: It should not query deleted record. Set to True to get all
         """
-        return cls.query(include_deleted=include_deleted) \
-            .filter(cls.id == id) \
-            .first()
+        return cls.query(include_deleted=include_deleted).filter(cls.id == id).first()
 
     def delete(self, delete=True, hard_delete=False):
         """
@@ -292,10 +292,7 @@ class Model(BaseModel):
                 self.db.rollback()
                 raise
         else:
-            data = {
-                "is_deleted": delete,
-                "deleted_at": utcnow() if delete else None
-            }
+            data = {"is_deleted": delete, "deleted_at": utcnow() if delete else None}
             self.update(**data)
         return self
 
@@ -337,15 +334,17 @@ class ActiveAlchemy(object):
 
     """
 
-    def __init__(self, uri='sqlite://',
-                 app=None,
-                 echo=False,
-                 pool_size=None,
-                 pool_timeout=None,
-                 pool_recycle=None,
-                 convert_unicode=True,
-                 query_cls=BaseQuery,
-                 connect_args={}):
+    def __init__(
+        self,
+        uri="sqlite://",
+        app=None,
+        echo=False,
+        pool_size=None,
+        pool_timeout=None,
+        pool_recycle=None,
+        query_cls=BaseQuery,
+        connect_args={},
+    ):
 
         self.uri = uri
         self.info = make_url(uri)
@@ -354,19 +353,21 @@ class ActiveAlchemy(object):
             pool_size=pool_size,
             pool_timeout=pool_timeout,
             pool_recycle=pool_recycle,
-            convert_unicode=convert_unicode,
-            connect_args=connect_args
+            connect_args=connect_args,
         )
 
         self.connector = None
         self._engine_lock = threading.Lock()
         self.session = _create_scoped_session(self, query_cls=query_cls)
 
-        self.Model = declarative_base(cls=Model, name='Model')
-        self.BaseModel = declarative_base(cls=BaseModel, name='BaseModel')
+        self.Model = declarative_base(cls=Model, name="Model")
+        self.BaseModel = declarative_base(cls=BaseModel, name="BaseModel")
 
         self.Model.db, self.BaseModel.db = self, self
-        self.Model._query, self.BaseModel._query = self.session.query, self.session.query
+        self.Model._query, self.BaseModel._query = (
+            self.session.query,
+            self.session.query,
+        )
 
         if app is not None:
             self.init_app(app)
@@ -374,25 +375,21 @@ class ActiveAlchemy(object):
         _include_sqlalchemy(self)
 
     def _cleanup_options(self, **kwargs):
-        options = dict([
-            (key, val)
-            for key, val in kwargs.items()
-            if val is not None
-        ])
+        options = dict([(key, val) for key, val in kwargs.items() if val is not None])
         return self._apply_driver_hacks(options)
 
     def _apply_driver_hacks(self, options):
         if "mysql" in self.info.drivername:
-            self.info.query.setdefault('charset', 'utf8')
-            options.setdefault('pool_size', 10)
-            options.setdefault('pool_recycle', 7200)
-        elif self.info.drivername == 'sqlite':
-            no_pool = options.get('pool_size') == 0
-            memory_based = self.info.database in (None, '', ':memory:')
+            self.info.query.setdefault("charset", "utf8")
+            options.setdefault("pool_size", 10)
+            options.setdefault("pool_recycle", 7200)
+        elif self.info.drivername == "sqlite":
+            no_pool = options.get("pool_size") == 0
+            memory_based = self.info.database in (None, "", ":memory:")
             if memory_based and no_pool:
                 raise ValueError(
-                    'SQLite in-memory database with an empty queue'
-                    ' (pool_size = 0) is not possible due to data loss.'
+                    "SQLite in-memory database with an empty queue"
+                    " (pool_size = 0) is not possible due to data loss."
                 )
         return options
 
@@ -402,7 +399,7 @@ class ActiveAlchemy(object):
         environment, never use a database without initialize it first,
         or connections will leak.
         """
-        if not hasattr(app, 'databases'):
+        if not hasattr(app, "databases"):
             app.databases = []
         if isinstance(app.databases, list):
             if self in app.databases:
@@ -422,14 +419,14 @@ class ActiveAlchemy(object):
         self.set_flask_hooks(app, shutdown, rollback)
 
     def set_flask_hooks(self, app, shutdown, rollback):
-        if hasattr(app, 'after_request'):
+        if hasattr(app, "after_request"):
             app.after_request(shutdown)
-        if hasattr(app, 'on_exception'):
+        if hasattr(app, "on_exception"):
             app.on_exception(rollback)
 
     @property
     def engine(self):
-        """Gives access to the engine. """
+        """Gives access to the engine."""
         with self._engine_lock:
             connector = self.connector
             if connector is None:
@@ -464,15 +461,15 @@ class ActiveAlchemy(object):
         return self.session.rollback()
 
     def create_all(self):
-        """Creates all tables. """
+        """Creates all tables."""
         self.Model.metadata.create_all(bind=self.engine)
 
     def drop_all(self):
-        """Drops all tables. """
+        """Drops all tables."""
         self.Model.metadata.drop_all(bind=self.engine)
 
     def reflect(self, meta=None):
-        """Reflects tables from the database. """
+        """Reflects tables from the database."""
         meta = meta or MetaData()
         meta.reflect(bind=self.engine)
         return meta
