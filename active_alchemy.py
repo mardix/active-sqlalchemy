@@ -197,7 +197,7 @@ class BaseModel(object):
         Creates a new record from the params of a pre-existing object
         :returns object: The new record
         """
-        return object.create(
+        return cls.create(
             **{k: v for k, v in inst.__dict__.items() if k != "_sa_instance_state"}
         )
 
