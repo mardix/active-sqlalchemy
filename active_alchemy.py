@@ -191,6 +191,16 @@ class BaseModel(object):
         record = cls(**kwargs).save()
         return record
 
+    @classmethod
+    def create_from_inst(cls, inst: object):
+        """
+        Creates a new record from the params of a pre-existing object
+        :returns object: The new record
+        """
+        return object.create(
+            **{k: v for k, v in inst.__dict__.items() if k != "_sa_instance_state"}
+        )
+
     def update(self, **kwargs):
         """
         Update an entry
